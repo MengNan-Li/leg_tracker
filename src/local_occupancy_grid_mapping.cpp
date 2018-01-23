@@ -28,7 +28,8 @@
 #define MIN_PROB 0.001
 #define MAX_PROB 1-MIN_PROB
 
-
+typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::LaserScan, 
+                                                        leg_tracker::LegArray> NoCloudSyncPolicy;
 
 /**
 * @basic A simple 'local' occupancy grid map that maps everything except tracked humans
@@ -50,7 +51,7 @@ public:
     scan_topic_(scan_topic),
     scan_sub_(nh_, scan_topic, 100),
     non_leg_clusters_sub_(nh_, "non_leg_clusters", 100),
-    sync(scan_sub_, non_leg_clusters_sub_, 100)
+    sync(NoCloudSyncPolicy(100),scan_sub_, non_leg_clusters_sub_)
   {
     ros::NodeHandle nh_private("~");
     std::string local_map_topic;
@@ -84,6 +85,8 @@ public:
           l_[i + width_*j] = l0_;
       }
     }
+
+
 
     // To coordinate callback for both laser scan message and a non_leg_clusters message
     sync.registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
