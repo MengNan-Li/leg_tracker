@@ -50,8 +50,7 @@ public:
     grid_centre_pos_found_(false),
     scan_topic_(scan_topic),
     scan_sub_(nh_, scan_topic, 100),
-    non_leg_clusters_sub_(nh_, "non_leg_clusters", 100),
-    sync(NoCloudSyncPolicy(100),scan_sub_, non_leg_clusters_sub_)
+    non_leg_clusters_sub_(nh_, "non_leg_clusters", 100)
   {
     ros::NodeHandle nh_private("~");
     std::string local_map_topic;
@@ -105,7 +104,8 @@ private:
   ros::NodeHandle nh_;
   message_filters::Subscriber<sensor_msgs::LaserScan> scan_sub_;
   message_filters::Subscriber<leg_tracker::LegArray> non_leg_clusters_sub_;
-  message_filters::TimeSynchronizer<sensor_msgs::LaserScan, leg_tracker::LegArray> sync;
+  message_filters::Synchronizer<NoCloudSyncPolicy>(NoCloudSyncPolicy(10),scan_sub_, non_leg_clusters_sub_) sync;
+  //message_filters::TimeSynchronizer<sensor_msgs::LaserScan, leg_tracker::LegArray> sync;
   ros::Subscriber odom_sub_;
   ros::Subscriber pose_sub_;
   ros::Publisher map_pub_;
