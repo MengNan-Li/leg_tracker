@@ -1,4 +1,4 @@
-
+#include <exception>
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
@@ -58,7 +58,7 @@ public:
     nh_.param("base_frame", base_frame_, std::string("base_link"));
     nh_private.param("local_map_topic", local_map_topic, std::string("local_map"));
     nh_private.param("local_map_resolution", resolution_, 0.05);
-    nh_private.param("local_map_cells_per_side", width_, 400);
+    nh_private.param("local_map_cells_per_side", width_, 200);
     nh_private.param("invalid_measurements_are_free_space", invalid_measurements_are_free_space_, false);
     nh_private.param("unseen_is_freespace", unseen_is_freespace_, true);
     nh_.param("use_scan_header_stamp_for_tfs", use_scan_header_stamp_for_tfs_, false);
@@ -90,6 +90,7 @@ public:
 
     map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>(local_map_topic, 10);
     markers_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 20);
+    ROS_INFO("OccupancyGridMapping constructor end");
   }
 
 
@@ -140,6 +141,8 @@ private:
   */
   void laserAndLegCallback(const sensor_msgs::LaserScan::ConstPtr& scan_msg, const leg_tracker::LegArray::ConstPtr& non_leg_clusters)
   {
+      ROS_INFO("non_leg_cluster && scan");
+      
     // Find out the time that should be used for tfs
     bool transform_available;
     ros::Time tf_time;
@@ -308,6 +311,8 @@ private:
         { 
           for (int j = 0; j < width_; j++)
           {
+
+   // std::cout<<j<<std::endl;
             double m_update;
 
             // Find dist and angle of current cell to laser position
@@ -378,7 +383,6 @@ private:
             {
               m_update = UNKNOWN;
             }
-
             // update l_ using m_update
             l_[i + width_*j] = (l_[i + width_*j] + logit(m_update) - l0_);
             if (l_[i + width_*j] < l_min_)
@@ -387,7 +391,6 @@ private:
               l_[i + width_*j] = l_max_;
           }
         }
-
         // Create and fill out an OccupancyGrid message
         nav_msgs::OccupancyGrid m_msg;
         m_msg.header.stamp = scan_msg->header.stamp; //ros::Time::now();
@@ -401,13 +404,12 @@ private:
           for (int j = 0; j < width_; j++)
             m_msg.data.push_back((int)(inverseLogit(l_[width_*i + j])*100));
 
+
         // Publish!
         map_pub_.publish(m_msg);
       }
     }
   }
-
-
   /**
   * @basic The logit function, i.e., the inverse of the logstic function
   * @param p 

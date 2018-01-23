@@ -71,7 +71,7 @@ class ObjectTracked:
         # A better method would be to use data-driven EM find the params. 
         # The important part is that the observations are "weighted" higher than the motion model 
         # because they're more trustworthy and the motion model kinda sucks
-        scan_frequency = rospy.get_param("scan_frequency", 7.5)
+        scan_frequency = rospy.get_param("scan_frequency", 15)
         delta_t = 1./scan_frequency
         if scan_frequency > 7.49 and scan_frequency < 7.51:
             std_process_noise = 0.06666
@@ -182,7 +182,7 @@ class KalmanMultiTracker:
         self.publish_detected_people = rospy.get_param("display_detected_people", False)        
         self.dist_travelled_together_to_initiate_leg_pair = rospy.get_param("dist_travelled_together_to_initiate_leg_pair", 0.5)
         scan_topic = rospy.get_param("scan_topic", "scan");
-        self.scan_frequency = rospy.get_param("scan_frequency", 7.5)
+        self.scan_frequency = rospy.get_param("scan_frequency", 15)
         self.in_free_space_threshold = rospy.get_param("in_free_space_threshold", 0.06)
         self.confidence_percentile = rospy.get_param("confidence_percentile", 0.90)
         self.max_std = rospy.get_param("max_std", 0.9)
@@ -761,6 +761,7 @@ class KalmanMultiTracker:
 
 if __name__ == '__main__':
     rospy.init_node('multi_person_tracker', anonymous=True)
+    rospy.loginfo("started")
     kmt = KalmanMultiTracker()
 
 
