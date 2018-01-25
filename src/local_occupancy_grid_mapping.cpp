@@ -96,8 +96,8 @@ public:
     map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>(local_map_topic, 10);
     markers_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 20);
 
-    pub_scan = nh_.advertise<sensor_msgs::LaserScan>(scan_topic,100);
-    sub_scan = nh_.subscribe("scan_5", 100, &OccupancyGridMapping::scanCallback, this);
+    pub_scan = nh_.advertise<sensor_msgs::LaserScan>("scan_5",100);
+    sub_scan = nh_.subscribe(scan_topic, 100, &OccupancyGridMapping::scanCallback, this);
 
     ROS_INFO("OccupancyGridMapping constructor end");
 
