@@ -50,7 +50,8 @@ public:
   OccupancyGridMapping(ros::NodeHandle nh, std::string scan_topic):
     nh_(nh),
     grid_centre_pos_found_(false),
-    scan_topic_(scan_topic)
+    scan_topic_(scan_topic),
+    sleep(10)
   {
     ros::NodeHandle nh_private("~");
     std::string local_map_topic;
@@ -98,6 +99,7 @@ public:
 
     pub_scan = nh_.advertise<sensor_msgs::LaserScan>("scan_5",100);
     sub_scan = nh_.subscribe(scan_topic, 100, &OccupancyGridMapping::scanCallback, this);
+
 
     ROS_INFO("OccupancyGridMapping constructor end");
 
@@ -147,6 +149,7 @@ public:
 
   tf::TransformListener tfl_;
   int count;
+  ros::Rate sleep;
 
 
   void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan_msg)
@@ -434,6 +437,7 @@ public:
 
         // Publish!
         map_pub_.publish(m_msg);
+        sleep.sleep();
       }
     }
   }
