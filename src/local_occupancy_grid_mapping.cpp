@@ -169,7 +169,6 @@ public:
   void laserAndLegCallback(const sensor_msgs::LaserScan::ConstPtr& scan_msg, const leg_tracker::LegArray::ConstPtr& non_leg_clusters)
   {
       ROS_INFO("non_leg_cluster && scan");
-      count++;
       
     // Find out the time that should be used for tfs
     bool transform_available;
