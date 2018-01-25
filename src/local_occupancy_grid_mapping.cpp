@@ -100,7 +100,7 @@ public:
   }
 
 
-private:
+public:
   std::string scan_topic_;
   std::string fixed_frame_;
   std::string base_frame_;
@@ -152,12 +152,6 @@ private:
   {
       ROS_INFO("non_leg_cluster && scan");
       count++;
-      if(count>30){
-          delete scan_sub_;
-          delete non_leg_clusters_sub_;
-          scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(nh_, scan_topic_, 100);
-          non_leg_clusters_sub_ = new message_filters::Subscriber<leg_tracker::LegArray>(nh_, "non_leg_clusters", 100);
-      }
       
     // Find out the time that should be used for tfs
     bool transform_available;
@@ -475,6 +469,20 @@ int main (int argc, char** argv)
   nh.param("scan_topic", scan_topic, std::string("scan"));
   OccupancyGridMapping ogm(nh, scan_topic);
 
-  ros::spin();
+  while (ros::ok()) {
+      ros::spinOnce();
+      if(ogm.count>30){
+          ogm.count = 0;
+          delete ogm.scan_sub_;
+          delete ogm.non_leg_clusters_sub_;
+          ogm.scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(ogm.nh_, ogm.scan_topic_, 100);
+          ogm.non_leg_clusters_sub_ = new message_filters::Subscriber<leg_tracker::LegArray>(ogm.nh_, "non_leg_clusters", 100);
+          //ogm.sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(100),*ogm.scan_sub_, *ogm.non_leg_clusters_sub_);
+          // To coordinate callback for both laser scan message and a non_leg_clusters message
+          //ogm.sync->registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, ogm, _1, _2));
+      }
+  }
+
+//  ros::spin();
   return 0;
 }
