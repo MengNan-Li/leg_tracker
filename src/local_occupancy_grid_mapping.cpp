@@ -95,6 +95,10 @@ public:
 
     map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>(local_map_topic, 10);
     markers_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 20);
+
+    pub_reset = nh_.advertise<std_msgs::Empty>("reset_sync",10);
+    sub_reset = nh_.subscribe("reset_sync", 10, &OccupancyGridMapping::resetCallback, this);
+
     ROS_INFO("OccupancyGridMapping constructor end");
 
   }
@@ -115,6 +119,8 @@ public:
   ros::Subscriber pose_sub_;
   ros::Publisher map_pub_;
   ros::Publisher markers_pub_;
+  ros::Publisher pub_reset;
+  ros::Subscriber sub_reset;
 
   double l0_;
   std::vector<double> l_;
@@ -142,6 +148,13 @@ public:
   tf::TransformListener tfl_;
   int count;
 
+
+  void resetCallback(const std_msgs::Empty::ConstPtr &msg)
+  {
+      sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(100),*scan_sub_, *non_leg_clusters_sub_);
+      // To coordinate callback for both laser scan message and a non_leg_clusters message
+      sync->registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
+  }
 
   /**
   * @brief Coordinated callback for both laser scan message and a non_leg_clusters message
@@ -471,15 +484,14 @@ int main (int argc, char** argv)
 
   while (ros::ok()) {
       ros::spinOnce();
-      if(ogm.count>30){
+      if(ogm.count>20){
           ogm.count = 0;
           delete ogm.scan_sub_;
           delete ogm.non_leg_clusters_sub_;
           ogm.scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(ogm.nh_, ogm.scan_topic_, 100);
           ogm.non_leg_clusters_sub_ = new message_filters::Subscriber<leg_tracker::LegArray>(ogm.nh_, "non_leg_clusters", 100);
-          //ogm.sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(100),*ogm.scan_sub_, *ogm.non_leg_clusters_sub_);
-          // To coordinate callback for both laser scan message and a non_leg_clusters message
-          //ogm.sync->registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, ogm, _1, _2));
+          std_msgs::Empty e;
+          ogm.pub_reset.publish(e);
       }
   }
 
