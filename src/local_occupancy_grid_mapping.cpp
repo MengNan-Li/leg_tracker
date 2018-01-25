@@ -68,7 +68,12 @@ public:
     nh_.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
     nh_.param("min_points_per_cluster", min_points_per_cluster_, 3);  
 
+    scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(nh_, scan_topic, 100);
+    non_leg_clusters_sub_ = new message_filters::Subscriber<leg_tracker::LegArray>(nh_, "non_leg_clusters", 100);
     sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(100),*scan_sub_, *non_leg_clusters_sub_);
+    // To coordinate callback for both laser scan message and a non_leg_clusters message
+    sync->registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
+    count = 0;
 
     // Initialize map
     // All probabilities are held in log-space
@@ -88,16 +93,10 @@ public:
     }
 
 
-
-    scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(nh_, scan_topic, 100);
-    non_leg_clusters_sub_ = new message_filters::Subscriber<leg_tracker::LegArray>(nh_, "non_leg_clusters", 100);
-    // To coordinate callback for both laser scan message and a non_leg_clusters message
-    sync->registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
-
     map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>(local_map_topic, 10);
     markers_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 20);
     ROS_INFO("OccupancyGridMapping constructor end");
-    count = 0;
+
   }
 
 
