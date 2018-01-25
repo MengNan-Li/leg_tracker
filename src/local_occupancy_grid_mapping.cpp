@@ -11,6 +11,8 @@
 #include <visualization_msgs/Marker.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/synchronizer.h>
 
 // Custom messages
 #include <leg_tracker/Leg.h>
@@ -68,6 +70,8 @@ public:
     nh_.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
     nh_.param("min_points_per_cluster", min_points_per_cluster_, 3);  
 
+    sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(20),scan_sub_, non_leg_clusters_sub_);
+
     // Initialize map
     // All probabilities are held in log-space
     l0_ = logit(UNKNOWN);
@@ -88,7 +92,7 @@ public:
 
 
     // To coordinate callback for both laser scan message and a non_leg_clusters message
-    sync.registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
+    sync->registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
 
     map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>(local_map_topic, 10);
     markers_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 20);
@@ -102,9 +106,10 @@ private:
   std::string base_frame_;
 
   ros::NodeHandle nh_;
+
   message_filters::Subscriber<sensor_msgs::LaserScan> scan_sub_;
   message_filters::Subscriber<leg_tracker::LegArray> non_leg_clusters_sub_;
-  message_filters::Synchronizer<NoCloudSyncPolicy>(NoCloudSyncPolicy(10),scan_sub_, non_leg_clusters_sub_) sync;
+  message_filters::Synchronizer<NoCloudSyncPolicy >* sync;
   //message_filters::TimeSynchronizer<sensor_msgs::LaserScan, leg_tracker::LegArray> sync;
   ros::Subscriber odom_sub_;
   ros::Subscriber pose_sub_;
