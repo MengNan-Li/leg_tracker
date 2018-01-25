@@ -69,9 +69,9 @@ public:
     nh_.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
     nh_.param("min_points_per_cluster", min_points_per_cluster_, 3);  
 
-    scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(nh_, "scan_5", 100);
-    non_leg_clusters_sub_ = new message_filters::Subscriber<leg_tracker::LegArray>(nh_, "non_leg_clusters", 100);
-    sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(100),*scan_sub_, *non_leg_clusters_sub_);
+    scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(nh_, "scan_5", 1);
+    non_leg_clusters_sub_ = new message_filters::Subscriber<leg_tracker::LegArray>(nh_, "non_leg_clusters", 1);
+    sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(10),*scan_sub_, *non_leg_clusters_sub_);
     // To coordinate callback for both laser scan message and a non_leg_clusters message
     sync->registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
     count = 0;
