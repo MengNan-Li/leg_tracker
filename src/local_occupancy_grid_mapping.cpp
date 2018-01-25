@@ -68,7 +68,7 @@ public:
     nh_.param("cluster_dist_euclid", cluster_dist_euclid_, 0.13);
     nh_.param("min_points_per_cluster", min_points_per_cluster_, 3);  
 
-    scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(nh_, scan_topic, 100);
+    scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(nh_, "scan_5", 100);
     non_leg_clusters_sub_ = new message_filters::Subscriber<leg_tracker::LegArray>(nh_, "non_leg_clusters", 100);
     sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(100),*scan_sub_, *non_leg_clusters_sub_);
     // To coordinate callback for both laser scan message and a non_leg_clusters message
@@ -96,8 +96,8 @@ public:
     map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>(local_map_topic, 10);
     markers_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 20);
 
-    pub_reset = nh_.advertise<std_msgs::Empty>("reset_sync",10);
-    sub_reset = nh_.subscribe("reset_sync", 10, &OccupancyGridMapping::resetCallback, this);
+    pub_scan = nh_.advertise<sensor_msgs::LaserScan>(scan_topic,100);
+    sub_scan = nh_.subscribe("scan_5", 100, &OccupancyGridMapping::scanCallback, this);
 
     ROS_INFO("OccupancyGridMapping constructor end");
 
@@ -119,8 +119,8 @@ public:
   ros::Subscriber pose_sub_;
   ros::Publisher map_pub_;
   ros::Publisher markers_pub_;
-  ros::Publisher pub_reset;
-  ros::Subscriber sub_reset;
+  ros::Publisher pub_scan;
+  ros::Subscriber sub_scan;
 
   double l0_;
   std::vector<double> l_;
@@ -149,12 +149,16 @@ public:
   int count;
 
 
-  void resetCallback(const std_msgs::Empty::ConstPtr &msg)
+  void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan_msg)
   {
-      std::cout<< "reset_sync" << std::endl;
-      sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(100),*scan_sub_, *non_leg_clusters_sub_);
-      // To coordinate callback for both laser scan message and a non_leg_clusters message
-      sync->registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
+     count++;
+     if(count>=3){
+         count = 0;
+         sensor_msgs::LaserScan new_scan(*scan_msg);
+         new_scan.header.stamp = ros::Time::now();
+         pub_scan.publish(new_scan);
+     }
+
   }
 
   /**
@@ -483,6 +487,7 @@ int main (int argc, char** argv)
   nh.param("scan_topic", scan_topic, std::string("scan"));
   OccupancyGridMapping ogm(nh, scan_topic);
 
+  /*
   while (ros::ok()) {
       ros::spinOnce();
       if(ogm.count>20){
@@ -495,7 +500,8 @@ int main (int argc, char** argv)
           ogm.pub_reset.publish(e);
       }
   }
+  */
 
-//  ros::spin();
+  ros::spin();
   return 0;
 }
