@@ -151,6 +151,7 @@ public:
 
   void resetCallback(const std_msgs::Empty::ConstPtr &msg)
   {
+      std::cout<< "reset_sync" << std::endl;
       sync = new message_filters::Synchronizer<NoCloudSyncPolicy > (NoCloudSyncPolicy(100),*scan_sub_, *non_leg_clusters_sub_);
       // To coordinate callback for both laser scan message and a non_leg_clusters message
       sync->registerCallback(boost::bind(&OccupancyGridMapping::laserAndLegCallback, this, _1, _2));
